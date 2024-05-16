@@ -7,12 +7,16 @@
         private int maxRadius = 350;
         private float penWidth = 10;
 
+        public event Action<SonarForm> AnimationCompleted;
+
         public SonarForm()
         {
             InitializeComponent();
             this.DoubleBuffered = true;
             this.FormBorderStyle = FormBorderStyle.None;
             this.Width = this.Height = maxRadius * 2 + (int)penWidth * 2;
+            this.ShowInTaskbar = false;
+            this.TopMost = true;
             this.animationTimer = new System.Windows.Forms.Timer();
             this.animationTimer.Interval = 10;
             this.animationTimer.Tick += AnimationTimer_Tick;
@@ -45,6 +49,7 @@
                 animationTimer.Stop();
                 this.Hide();
                 radius = 0;
+                AnimationCompleted?.Invoke(this);
             }
         }
 

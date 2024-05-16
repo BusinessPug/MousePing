@@ -4,10 +4,11 @@ namespace MousePing
 {
     public partial class Form1 : Form
     {
-        private SonarForm sonarFormInstance = new SonarForm();
         private int hotkeyId = 1;
         private Keys hotkey = Keys.None;
         private uint hotkeyModifiers = 0;
+        private List<SonarForm> sonarFormPool;
+        private int poolSize = 10;
 
         public Form1()
         {
@@ -16,19 +17,48 @@ namespace MousePing
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             this.WindowState = FormWindowState.Minimized;
             this.ShowInTaskbar = false;
-            sonarFormInstance.Show();
-            sonarFormInstance.Hide();
             Keys hotkey = (Keys)Enum.Parse(typeof(Keys), Properties.Settings.Default.Hotkey);
             RegisterHotkey(hotkey, 0);
+            InitializeSonarFormPool();
+        }
+
+        private void InitializeSonarFormPool()
+        {
+            sonarFormPool = new List<SonarForm>();
+            for (int i = 0; i < poolSize; i++)
+            {
+                SonarForm sonarForm = new SonarForm();
+                sonarForm.AnimationCompleted += OnAnimationCompleted;
+                sonarForm.Show();
+                sonarForm.Hide();
+                sonarFormPool.Add(sonarForm);
+            }
         }
 
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == 0x0312 && m.WParam.ToInt32() == hotkeyId) // WM_HOTKEY
             {
-                sonarFormInstance.StartAnimation(); // Start the sonar animation
+                StartAnimation();
             }
             base.WndProc(ref m);
+        }
+
+        private void StartAnimation()
+        {
+            if (sonarFormPool.Count > 0)
+            {
+                SonarForm sonarForm = sonarFormPool[0];
+                sonarFormPool.RemoveAt(0);
+                sonarForm.StartAnimation();
+            }
+        }
+
+        private async void OnAnimationCompleted(SonarForm sonarForm)
+        {
+            // Wait for a short delay before resetting the SonarForm
+            await Task.Delay(500);
+            sonarFormPool.Add(sonarForm);
         }
 
         public bool RegisterHotkey(Keys key, uint modifiers)
